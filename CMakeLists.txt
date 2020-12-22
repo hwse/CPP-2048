@@ -7,5 +7,5 @@ set(CMAKE_CXX_STANDARD 11)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 
-add_executable(game WIN32 main.cpp)
+add_executable(game WIN32 main.cpp game.cpp)
 target_link_libraries(game PUBLIC CONAN_PKG::wxwidgets)
