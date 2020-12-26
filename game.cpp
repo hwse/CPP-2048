@@ -1,6 +1,7 @@
 #include <iostream>
 #include <random>
 #include <cassert>  
+#include <algorithm>
 
 #include "game.h"
 
@@ -94,11 +95,7 @@ bool handlePair(Cell& first, Cell& second) {
 }
 
 GameState::GameState() { 
-    for (size_t row = 0; row < ROW_COUNT; row++) {
-        for (size_t column = 0; column < COLUMN_COUNT; column++) {
-            cells[row][column] = 0;
-        }
-    }
+    reset();
 }
 
 Cell& GameState::get(const Position& position) {
@@ -136,19 +133,69 @@ bool GameState::shiftIndex(Direction direction, int index) {
     }
 }
 
-void GameState::spawn() {
+bool GameState::spawn() {
+    // find all empty 
+    std::vector<Position> free_positions;
+    std::copy_if(begin(), 
+                 end(), 
+                 std::back_inserter(free_positions), 
+                 [this](auto position) { return get(position) == 0; });
+
+    if (free_positions.empty()) {
+        return false;
+    }
+
     std::random_device rd;     // only used once to initialise (seed) engine
     std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
-    std::uniform_int_distribution<int> row_dist(0, ROW_COUNT-1);
-    std::uniform_int_distribution<int> col_dist(0, COLUMN_COUNT-1);
-    
-    while(true) {
-        Position p {row_dist(rng), col_dist(rng)};
-        // spawn 2 if empty and return
-        Cell& c = get(p);
-        if (c == 0) {
-            c = 2;
-            return;
-        }
+    std::uniform_int_distribution<int> index_dist(0, free_positions.size() - 1);
+    int index = index_dist(rng);
+    get(free_positions.at(index)) = 2;
+    return true;
+}
+
+bool GameState::full() {
+    return std::all_of(begin(), end(), [this](auto position) { 
+        return get(position) != 0; 
+    });
+}
+
+void GameState::reset() {
+    for (auto position: *this) {
+        get(position) = 0;
     }
+}
+
+GameStateIterator GameState::begin() const {
+    return GameStateIterator({0, 0});
+}
+    
+GameStateIterator GameState::end() const {
+    // GameStateIterator first increments columns then rows
+    // so the last element we want out of the iterator is { ROW_COUNT-1, COLUMN_COUNT-1 }
+    // Which means the end must be the element after that, which is: 
+    return GameStateIterator({ ROW_COUNT, 0 });
+}
+
+GameStateIterator::GameStateIterator(Position p)
+    : position{p} {
+}
+
+bool GameStateIterator::operator==(const GameStateIterator& other) const {
+    return position == other.position;
+}
+
+bool GameStateIterator::operator!=(const GameStateIterator& other) const {
+    return !(*this == other);
+}
+
+void GameStateIterator::operator++() {
+    position.column += 1;
+    if (position.column >= COLUMN_COUNT) {
+        position.column = 0;
+        position.row += 1;
+    }
+}
+
+Position GameStateIterator::operator*() {
+    return position;
 }

@@ -67,6 +67,15 @@ public:
         bool changed = gameState.shift(direction);
         if (changed) {
             gameState.spawn();
+        } else {
+            if (gameState.full()) {
+                wxMessageBox("You lost because all tiles on the board were filled.", "You lost!", wxICON_INFORMATION);
+                gameState.reset();
+                gameState.spawn();
+                gameState.spawn();
+
+                updateButtons();
+            }
         }
         updateButtons();
         event.Skip();

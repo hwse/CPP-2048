@@ -43,15 +43,39 @@ public:
 
 bool handlePair(Cell& first, Cell& second);
 
+class GameStateIterator {
+public:
+    GameStateIterator(Position p);
+    bool operator==(const GameStateIterator& other) const;
+    bool operator!=(const GameStateIterator& other) const;
+    void operator++();
+    Position operator*();
+private:
+    Position position;
+};
+
 class GameState {
 private:
     Cell cells[ROW_COUNT][COLUMN_COUNT];
     // bool shiftLine(LineType line_type, size_t index);
+    
+    template<typename Body>
+    void forEach(Body body) {
+        for (size_t row = 0; row < ROW_COUNT; row++) {
+            for (size_t column = 0; column < COLUMN_COUNT; column++) {
+                body(cells[row][column]);
+            }
+        }
+    }
 public:
     GameState();
     Cell& GameState::get(const Position& position);
     bool shift(Direction direction);
     bool shiftIndex(Direction direction, int index);
-    /** Spawn a 2 in a random position */
-    void spawn();
+    /** Try to spawn a 2 in a random position */
+    bool spawn();
+    bool full();
+    void reset();
+    GameStateIterator begin() const;
+    GameStateIterator end() const;
 };
